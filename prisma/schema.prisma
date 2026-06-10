@@ -1,0 +1,110 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Provider {
+  INSTAGRAM
+  YOUTUBE
+  FACEBOOK
+  TIKTOK
+  GOOGLE
+}
+
+enum PurchaseStatus {
+  PENDING
+  CONFIRMED
+}
+
+model User {
+  id              Int       @id @default(autoincrement())
+  name            String
+  bio             String?
+  profileImageUrl String?
+  provider        Provider
+  providerId      String
+  createdAt       DateTime  @default(now())
+
+  posts         Post[]
+  purchases     Purchase[]
+  followers     Follow[]   @relation("following")
+  following     Follow[]   @relation("follower")
+  videoProjects VideoProject[]
+
+  @@unique([provider, providerId])
+}
+
+model Follow {
+  id          Int      @id @default(autoincrement())
+  followerId  Int
+  followingId Int
+  createdAt   DateTime @default(now())
+
+  follower  User @relation("follower", fields: [followerId], references: [id])
+  following User @relation("following", fields: [followingId], references: [id])
+
+  @@unique([followerId, followingId])
+}
+
+model Post {
+  id           Int      @id @default(autoincrement())
+  title        String
+  description  String
+  thumbnailUrl String
+  price        Int
+  details      String[]
+  buyerContent String
+  viewCount    Int      @default(0)
+  authorId     Int
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  author    User       @relation(fields: [authorId], references: [id])
+  purchases Purchase[]
+  postTags  PostTag[]
+}
+
+model Tag {
+  id       Int       @id @default(autoincrement())
+  name     String    @unique
+  postTags PostTag[]
+}
+
+model PostTag {
+  postId Int
+  tagId  Int
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tag  Tag  @relation(fields: [tagId], references: [id])
+
+  @@id([postId, tagId])
+}
+
+model Purchase {
+  id         Int            @id @default(autoincrement())
+  userId     Int
+  postId     Int
+  orderId    String         @unique
+  paymentKey String?
+  amount     Int
+  status     PurchaseStatus @default(PENDING)
+  createdAt  DateTime       @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+  post Post @relation(fields: [postId], references: [id])
+}
+
+model VideoProject {
+  id        Int      @id @default(autoincrement())
+  title     String
+  userId    Int
+  editData  Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+}
