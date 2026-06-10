@@ -15,9 +15,10 @@ enum Provider {
   GOOGLE
 }
 
-enum PurchaseStatus {
+enum PaymentStatus {
   PENDING
-  CONFIRMED
+  DONE
+  ABORTED
 }
 
 model User {
@@ -25,15 +26,23 @@ model User {
   name            String
   bio             String?
   profileImageUrl String?
-  provider        Provider
-  providerId      String
   createdAt       DateTime  @default(now())
 
-  posts         Post[]
-  purchases     Purchase[]
-  followers     Follow[]   @relation("following")
-  following     Follow[]   @relation("follower")
-  videoProjects VideoProject[]
+  socialAccounts SocialAccount[]
+  posts          Post[]
+  purchases      Purchase[]
+  followers      Follow[]      @relation("following")
+  following      Follow[]      @relation("follower")
+  videoProjects  VideoProject[]
+}
+
+model SocialAccount {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  provider   Provider
+  providerId String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerId])
 }
@@ -51,21 +60,32 @@ model Follow {
 }
 
 model Post {
-  id           Int      @id @default(autoincrement())
-  title        String
-  description  String
-  thumbnailUrl String
-  price        Int
-  details      String[]
-  buyerContent String
-  viewCount    Int      @default(0)
-  authorId     Int
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id             Int      @id @default(autoincrement())
+  title          String
+  description    String
+  thumbnailUrl   String?
+  price          Int
+  buyerContent   Json
+  viewCount      Int      @default(0)
+  authorId       Int
+  videoProjectId Int?     @unique
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
-  author    User       @relation(fields: [authorId], references: [id])
-  purchases Purchase[]
-  postTags  PostTag[]
+  author       User          @relation(fields: [authorId], references: [id])
+  videoProject VideoProject? @relation(fields: [videoProjectId], references: [id])
+  purchases    Purchase[]
+  postTags     PostTag[]
+  postDetails  PostDetail[]
+}
+
+model PostDetail {
+  id        Int    @id @default(autoincrement())
+  postId    Int
+  sortOrder Int
+  content   String
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
 }
 
 model Tag {
@@ -85,26 +105,34 @@ model PostTag {
 }
 
 model Purchase {
-  id         Int            @id @default(autoincrement())
-  userId     Int
-  postId     Int
-  orderId    String         @unique
-  paymentKey String?
-  amount     Int
-  status     PurchaseStatus @default(PENDING)
-  createdAt  DateTime       @default(now())
+  id            Int           @id @default(autoincrement())
+  buyerId       Int
+  postId        Int
+  orderId       String        @unique
+  paymentKey    String?
+  paymentMethod String?
+  price         Int
+  paymentStatus PaymentStatus @default(PENDING)
+  purchasedAt   DateTime?
+  createdAt     DateTime      @default(now())
 
-  user User @relation(fields: [userId], references: [id])
-  post Post @relation(fields: [postId], references: [id])
+  buyer User @relation(fields: [buyerId], references: [id])
+  post  Post @relation(fields: [postId], references: [id])
+
+  @@unique([buyerId, postId])
 }
 
 model VideoProject {
-  id        Int      @id @default(autoincrement())
-  title     String
-  userId    Int
-  editData  Json
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id               Int      @id @default(autoincrement())
+  title            String
+  userId           Int
+  thumbnailUrl     String?
+  duration         Float?
+  editData         Json
+  exportedVideoUrl String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
-  user User @relation(fields: [userId], references: [id])
+  user User  @relation(fields: [userId], references: [id])
+  post Post?
 }
