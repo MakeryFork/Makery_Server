@@ -2,7 +2,8 @@ export const env = {
   port: Number(process.env.PORT) || 3000,
   jwtSecret: process.env.JWT_SECRET || 'dev_secret',
   sessionSecret: process.env.SESSION_SECRET || 'dev_session_secret',
-  clientUrl: process.env.CLIENT_URL || 'http://localhost:8080',
+  clientUrl: process.env.CLIENT_URL || 'http://localhost:5137',
+  backendUrl: process.env.BACKEND_URL || 'http://localhost:3000',
 
   google: {
     clientId: process.env.GOOGLE_CLIENT_ID || '',

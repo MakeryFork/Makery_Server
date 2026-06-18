@@ -3,6 +3,7 @@ import { prisma } from '../lib/prisma';
 import { auth, optionalAuth } from '../middleware/auth';
 import { AppError } from '../middleware/error.middleware';
 import { Provider } from '@prisma/client';
+import { BuyerContent } from '../types';
 
 const router = Router();
 
@@ -106,7 +107,7 @@ router.post('/', auth, async (req, res, next) => {
       price: number;
       details?: { sortOrder: number; content: string }[];
       tagIds?: number[];
-      buyerContent: unknown;
+      buyerContent?: BuyerContent;
       videoProjectId?: number;
     };
 
@@ -116,7 +117,7 @@ router.post('/', auth, async (req, res, next) => {
         description,
         thumbnailUrl,
         price,
-        buyerContent: buyerContent as object,
+        ...(buyerContent !== undefined && { buyerContent: buyerContent as object }),
         authorId: req.user!.id,
         ...(videoProjectId && { videoProjectId }),
         postDetails: {
@@ -153,7 +154,7 @@ router.patch('/:id', auth, async (req, res, next) => {
       price?: number;
       details?: { sortOrder: number; content: string }[];
       tagIds?: number[];
-      buyerContent?: unknown;
+      buyerContent?: BuyerContent;
     };
 
     const post = await prisma.post.update({

@@ -65,7 +65,7 @@ model Post {
   description    String
   thumbnailUrl   String?
   price          Int
-  buyerContent   Json
+  buyerContent   Json?
   viewCount      Int      @default(0)
   authorId       Int
   videoProjectId Int?     @unique

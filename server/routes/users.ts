@@ -131,21 +131,42 @@ router.get('/:id/following', async (req, res, next) => {
 router.get('/:id/posts', async (req, res, next) => {
   try {
     const authorId = Number(req.params.id);
-    const posts = await prisma.post.findMany({
-      where: { authorId },
-      orderBy: { updatedAt: 'desc' },
-      select: {
-        id: true,
-        title: true,
-        thumbnailUrl: true,
-        price: true,
-        viewCount: true,
-        updatedAt: true,
-        postTags: { select: { tag: { select: { id: true, name: true } } } },
-        _count: { select: { purchases: true } },
-      },
-    });
-    return res.json({ success: true, data: posts });
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 20;
+
+    const [total, posts] = await Promise.all([
+      prisma.post.count({ where: { authorId } }),
+      prisma.post.findMany({
+        where: { authorId },
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: { updatedAt: 'desc' },
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          thumbnailUrl: true,
+          price: true,
+          viewCount: true,
+          videoProjectId: true,
+          createdAt: true,
+          updatedAt: true,
+          author: {
+            select: {
+              id: true,
+              name: true,
+              profileImageUrl: true,
+              socialAccounts: { select: { provider: true } },
+            },
+          },
+          postDetails: { orderBy: { sortOrder: 'asc' }, select: { id: true, sortOrder: true, content: true } },
+          postTags: { select: { tag: { select: { id: true, name: true } } } },
+          _count: { select: { purchases: true } },
+        },
+      }),
+    ]);
+
+    return res.json({ success: true, data: posts, total, page, limit });
   } catch (err) {
     next(err);
   }

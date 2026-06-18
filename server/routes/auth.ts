@@ -10,8 +10,8 @@ const router = Router();
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
-function callbackUrl(req: { protocol: string; get: (h: string) => string | undefined }, provider: string) {
-  return `${req.protocol}://${req.get('host')}/api/v1/auth/${provider}/callback`;
+function callbackUrl(provider: string) {
+  return `${env.backendUrl}/api/v1/auth/${provider}/callback`;
 }
 
 async function upsertUser(provider: Provider, providerId: string, name: string, profileImageUrl?: string) {
@@ -46,10 +46,11 @@ function issueToken(userId: number, name: string) {
 router.get('/google', (req, res) => {
   const params = new URLSearchParams({
     client_id: env.google.clientId,
-    redirect_uri: callbackUrl(req, 'google'),
+    redirect_uri: callbackUrl('google'),
     response_type: 'code',
     scope: 'openid email profile',
     access_type: 'offline',
+    prompt: 'select_account',
   });
   res.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params}`);
 });
@@ -61,7 +62,7 @@ router.get('/google/callback', async (req, res) => {
       code,
       client_id: env.google.clientId,
       client_secret: env.google.clientSecret,
-      redirect_uri: callbackUrl(req, 'google'),
+      redirect_uri: callbackUrl('google'),
       grant_type: 'authorization_code',
     });
     const infoRes = await axios.get('https://www.googleapis.com/oauth2/v3/userinfo', {
@@ -82,7 +83,7 @@ router.get('/google/callback', async (req, res) => {
 router.get('/instagram', (req, res) => {
   const params = new URLSearchParams({
     client_id: env.instagram.clientId,
-    redirect_uri: callbackUrl(req, 'instagram'),
+    redirect_uri: callbackUrl('instagram'),
     scope: 'user_profile,user_media',
     response_type: 'code',
   });
@@ -96,7 +97,7 @@ router.get('/instagram/callback', async (req, res) => {
       client_id: env.instagram.clientId,
       client_secret: env.instagram.clientSecret,
       grant_type: 'authorization_code',
-      redirect_uri: callbackUrl(req, 'instagram'),
+      redirect_uri: callbackUrl('instagram'),
       code,
     });
     const tokenRes = await axios.post('https://api.instagram.com/oauth/access_token', form.toString(), {
@@ -121,7 +122,7 @@ router.get('/instagram/callback', async (req, res) => {
 router.get('/youtube', (req, res) => {
   const params = new URLSearchParams({
     client_id: env.youtube.clientId,
-    redirect_uri: callbackUrl(req, 'youtube'),
+    redirect_uri: callbackUrl('youtube'),
     response_type: 'code',
     scope: 'openid profile https://www.googleapis.com/auth/youtube.readonly',
     access_type: 'offline',
@@ -136,7 +137,7 @@ router.get('/youtube/callback', async (req, res) => {
       code,
       client_id: env.youtube.clientId,
       client_secret: env.youtube.clientSecret,
-      redirect_uri: callbackUrl(req, 'youtube'),
+      redirect_uri: callbackUrl('youtube'),
       grant_type: 'authorization_code',
     });
     const infoRes = await axios.get('https://www.googleapis.com/oauth2/v3/userinfo', {
@@ -157,7 +158,7 @@ router.get('/youtube/callback', async (req, res) => {
 router.get('/facebook', (req, res) => {
   const params = new URLSearchParams({
     client_id: env.facebook.clientId,
-    redirect_uri: callbackUrl(req, 'facebook'),
+    redirect_uri: callbackUrl('facebook'),
     scope: 'public_profile',
     response_type: 'code',
   });
@@ -171,7 +172,7 @@ router.get('/facebook/callback', async (req, res) => {
       params: {
         client_id: env.facebook.clientId,
         client_secret: env.facebook.clientSecret,
-        redirect_uri: callbackUrl(req, 'facebook'),
+        redirect_uri: callbackUrl('facebook'),
         code,
       },
     });
@@ -193,7 +194,7 @@ router.get('/facebook/callback', async (req, res) => {
 router.get('/tiktok', (req, res) => {
   const params = new URLSearchParams({
     client_key: env.tiktok.clientId,
-    redirect_uri: callbackUrl(req, 'tiktok'),
+    redirect_uri: callbackUrl('tiktok'),
     scope: 'user.info.basic',
     response_type: 'code',
   });
@@ -210,7 +211,7 @@ router.get('/tiktok/callback', async (req, res) => {
         client_secret: env.tiktok.clientSecret,
         code,
         grant_type: 'authorization_code',
-        redirect_uri: callbackUrl(req, 'tiktok'),
+        redirect_uri: callbackUrl('tiktok'),
       }).toString(),
       { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } },
     );

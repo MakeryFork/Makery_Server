@@ -5,7 +5,7 @@ import { prisma } from '../lib/prisma';
 import { auth } from '../middleware/auth';
 import { AppError } from '../middleware/error.middleware';
 import { env } from '../config/env';
-import { TossPaymentResponse } from '../types';
+import { TossPaymentResponse, VideoEditData } from '../types';
 
 const router = Router();
 
@@ -166,6 +166,53 @@ router.get('/me', auth, async (req, res, next) => {
     ]);
 
     return res.json({ success: true, data: { items, total, page, limit } });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /purchases/:postId/sources — 구매한 템플릿 소스 조회
+router.get('/:postId/sources', auth, async (req, res, next) => {
+  try {
+    const postId = Number(req.params.postId);
+    const buyerId = req.user!.id;
+
+    const purchase = await prisma.purchase.findUnique({
+      where: { buyerId_postId: { buyerId, postId } },
+    });
+    if (!purchase || purchase.paymentStatus !== 'DONE')
+      throw new AppError(403, '구매 내역이 없습니다.');
+
+    const post = await prisma.post.findUnique({
+      where: { id: postId },
+      select: { title: true, thumbnailUrl: true, videoProjectId: true },
+    });
+    if (!post?.videoProjectId) throw new AppError(404, '비디오 프로젝트가 없습니다.');
+
+    const project = await prisma.videoProject.findUnique({
+      where: { id: post.videoProjectId },
+      select: { editData: true },
+    });
+
+    const ed = ((project?.editData ?? {}) as unknown) as VideoEditData;
+    const templateSources = {
+      effects:    ed.effects    ?? [],
+      texts:      ed.texts      ?? [],
+      audios:     ed.audios     ?? [],
+      animations: ed.animations ?? [],
+      splits:     ed.splits     ?? [],
+    };
+
+    return res.json({
+      success: true,
+      data: {
+        postId,
+        videoProjectId: post.videoProjectId,
+        post: { title: post.title, thumbnailUrl: post.thumbnailUrl },
+        clipSlots: [],
+        templateSources,
+      },
+    });
   } catch (err) {
     next(err);
   }

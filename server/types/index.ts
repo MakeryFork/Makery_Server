@@ -3,6 +3,7 @@ export interface VideoEditData {
   effects?: VideoEffect[];
   texts?: VideoText[];
   audios?: VideoAudio[];
+  splits?: VideoSplit[];
   [key: string]: unknown;
 }
 
@@ -51,6 +52,18 @@ export interface VideoAudio {
   url: string;
   startTime: number;
   endTime: number;
+}
+
+export interface VideoSplit {
+  clipId: string;
+  trimStart: number;
+  trimEnd: number;
+  duration: number;
+}
+
+export interface BuyerContent {
+  title: string;
+  markdownContent: string;
 }
 
 export interface TossPaymentResponse {
